@@ -1,0 +1,10 @@
+# === Python general ===
+__pycache__/
+
+# === Large data ===
+dataset/
+figure_plot/
+
+# === VSCode ===
+.vscode/
+prompt.md
