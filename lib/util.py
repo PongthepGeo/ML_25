@@ -225,6 +225,7 @@ def scatter_plot(x, y, labels, centers, cluster_to_name, name_to_color,
     ax.grid(alpha=0.25, zorder=0)
 
     ax.legend(ncol=2, fontsize=9, frameon=True, loc='best')
+    plt.tight_layout()
     os.makedirs('figure_plot', exist_ok=True)
     plt.savefig('figure_plot/cluster.png', format='png', dpi=600, bbox_inches='tight', transparent=True, pad_inches=0)
     print("Figure saved to 'figure_plot/cluster.png'")
@@ -312,4 +313,7 @@ def plot_scatter_with_regression(x, y, facies_names, name_to_color,
     ax.grid(alpha=0.25, zorder=0)
     ax.legend(ncol=2, fontsize=9, frameon=True, loc='best')
     plt.tight_layout()
+    os.makedirs('figure_plot', exist_ok=True)
+    plt.savefig('figure_plot/linear.png', format='png', dpi=600, bbox_inches='tight', transparent=True, pad_inches=0)
+    print("Figure saved to 'figure_plot/linear.png'")
     plt.show()
