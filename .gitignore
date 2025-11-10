@@ -4,7 +4,10 @@ __pycache__/
 # === Large data ===
 dataset/
 figure_plot/
+figure_out/
 
 # === VSCode ===
 .vscode/
-prompt.md
+command.md
+
+midterm_xgboost/
