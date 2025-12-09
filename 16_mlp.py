@@ -19,6 +19,7 @@ TABULAR_FILE = 'table.csv'
 
 OUTPUT_DIR = 'figure_out/mlp_supervised'
 PRED_MASK_FILE = 'predicted_mask.png'
+MODEL_WEIGHT_FILE = 'mlp_model.pth'
 
 NUM_CLASSES = 2          # Binary: 0 (background), 1 (object)
 FEATURE_COLS = ['img']   # Currently 1D feature (grayscale intensity)
@@ -224,6 +225,19 @@ def main():
     cv2.imwrite(out_path, pred_vis)
     print(f"[ok] Prediction mask saved to {out_path}")
     print(f"[ok] Predicted mask shape: {pred_map.shape}")
+
+    # 6) Save model weights
+    model_path = os.path.join(OUTPUT_DIR, MODEL_WEIGHT_FILE)
+    torch.save({
+        'model_state_dict': model.state_dict(),
+        'input_dim': X_tensor.shape[1],
+        'hidden': HIDDEN,
+        'num_classes': NUM_CLASSES,
+        'use_batchnorm': USE_BATCHNORM,
+        'dropout': DROPOUT,
+        'image_shape': (H, W)
+    }, model_path)
+    print(f"[ok] Model weights saved to {model_path}")
 
 if __name__ == "__main__":
     main()
