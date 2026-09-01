@@ -29,5 +29,5 @@ for i, (channel, title, cmap) in enumerate(channels):
     ax[i].set_title(title)
     ax[i].axis('off')
 os.makedirs('figure_plot', exist_ok=True)
-plt.savefig('figure_plot/' + 'satellite' + '.svg', format='svg', bbox_inches='tight', transparent=True, pad_inches=0)
+plt.savefig('figure_plot/' + 'satellite' + '.png', format='png', bbox_inches='tight', transparent=True, pad_inches=0)
 plt.show()
