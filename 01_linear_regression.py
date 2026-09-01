@@ -15,8 +15,8 @@ df_sorted = df_filtered.sort_values(by="Depth")
 # Extract x (Depth) and y (GR)
 X = df_sorted["Depth"].values.reshape(-1, 1)
 y = df_sorted["GR"].values
-# X = X[0:10]
-# y = y[0:10]
+X = X[0:10]
+y = y[0:10]
 
 # Fit linear regression
 model = LinearRegression()
