@@ -3,16 +3,13 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from pathlib import Path
 
-
 # =========================================================
 # Paths
 # =========================================================
 image_path = Path("data/img_0037.png")
 label_path = Path("data/label_0037.png")
-
 output_extraction = Path("02_extraction.png")
 output_distribution = Path("02_distribution.png")
-
 
 # =========================================================
 # Gaussian PDF
@@ -20,12 +17,10 @@ output_distribution = Path("02_distribution.png")
 def gaussian_pdf(x, mean, std):
     if std <= 0:
         return np.zeros_like(x)
-
     return (
         1.0 / (std * np.sqrt(2.0 * np.pi))
         * np.exp(-0.5 * ((x - mean) / std) ** 2)
     )
-
 
 # =========================================================
 # Reference label colors
@@ -37,21 +32,17 @@ reference_colors = {
     "Yellow": np.array([255, 255, 0]),
 }
 
-
 # =========================================================
 # Find closest class name
 # =========================================================
 def nearest_color_name(rgb):
-
     rgb = np.asarray(rgb, dtype=float)
-
     distances = {
         name: np.linalg.norm(rgb - ref)
         for name, ref in reference_colors.items()
     }
 
     return min(distances, key=distances.get)
-
 
 # =========================================================
 # Load image and label
