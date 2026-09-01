@@ -12,6 +12,7 @@ from xgboost import XGBClassifier
 # =========================================================
 csv_path = Path("03_image2csv/03_image2csv.csv")
 model_path = Path("04_xgboost_model.json")
+print("\n====================================")
 
 # =========================================================
 # Load CSV
