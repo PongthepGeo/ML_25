@@ -6,10 +6,8 @@ Segments image into two clusters using color/spatial features
 # ============================================================================
 # CONFIGURATION - All variables at top
 # ============================================================================
-# Input/Output paths
+# Input paths
 DEFAULT_IMAGE_PATH = "dataset/high.png"
-OUTPUT_BASE_DIR = "figure_out"
-OUTPUT_SUBDIR = "kmeans_segmentation"
 
 # Feature extraction parameters
 COLORSPACE = "lab"  # 'lab' or 'rgb'
@@ -23,14 +21,12 @@ RANDOM_SEED = 0
 # ============================================================================
 # IMPORTS
 # ============================================================================
-import os
 import sys
 import numpy as np
+from pathlib import Path
 from PIL import Image
 
-# Add lib directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
-from KMEAN_ import (
+from lib.KMEAN_ import (
     configure_matplotlib,
     load_image,
     build_features,
@@ -39,25 +35,24 @@ from KMEAN_ import (
     save_segmentation,
     save_side_by_side,
     save_cluster_panels,
-    ensure_output_dir
 )
+
+# Output folder (one folder per script, named after the script)
+OUTDIR = Path("13_kmean_seg")
+OUTDIR.mkdir(parents=True, exist_ok=True)
 
 # ============================================================================
 # MAIN EXECUTION
 # ============================================================================
 def main():
     # Allow command-line override of defaults
-    import sys
     img_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_IMAGE_PATH
     colorspace = sys.argv[2] if len(sys.argv) > 2 else COLORSPACE
     coords_weight = float(sys.argv[3]) if len(sys.argv) > 3 else COORDS_WEIGHT
     seed = int(sys.argv[4]) if len(sys.argv) > 4 else RANDOM_SEED
 
-    # Configure matplotlib
+    # Configure matplotlib (shared global plot style)
     configure_matplotlib()
-
-    # Prepare output directory
-    output_dir = ensure_output_dir(OUTPUT_BASE_DIR, OUTPUT_SUBDIR)
 
     # Load image
     pil_img, arr = load_image(img_path)
@@ -76,10 +71,10 @@ def main():
     mask_2d = labels2.reshape(H, W).astype(np.uint8)
 
     # Save outputs
-    side_by_side_path = os.path.join(output_dir, "result_side_by_side.png")
-    mask_path = os.path.join(output_dir, "mask_segmentation.png")
-    clusters_path = os.path.join(output_dir, "clusters_separate.png")
-    npy_path = os.path.join(output_dir, "mask_segmentation.npy")
+    side_by_side_path = OUTDIR / "result_side_by_side.png"
+    mask_path = OUTDIR / "mask_segmentation.png"
+    clusters_path = OUTDIR / "clusters_separate.png"
+    npy_path = OUTDIR / "mask_segmentation.npy"
 
     # Save visualizations
     save_side_by_side(side_by_side_path, arr, mask_2d, K=N_CLUSTERS)
@@ -90,7 +85,7 @@ def main():
     # Create colored overlay (normalize mask for overlay)
     mask_normalized = mask_2d.astype(float) / max(1, N_CLUSTERS - 1)
     overlay = (arr * 0.6 + np.stack([mask_normalized] * 3, axis=-1) * 0.4).clip(0, 1)
-    overlay_path = os.path.join(output_dir, "overlay.png")
+    overlay_path = OUTDIR / "overlay.png"
     Image.fromarray((overlay * 255).astype(np.uint8)).save(overlay_path)
 
     # Report results

@@ -3,8 +3,29 @@ __pycache__/
 
 # === Large data ===
 dataset/
+
+# === Script outputs (one folder per script, named after the script) ===
+01_linear_regression/
+02_classification/
+03_well_log/
+04_gpr/
+05_satellite/
+05_satellite_composite/
+06_linear_model/
+07_clustering/
+08_residuals/
+10_optimize/
+11_complete_optimize/
+12_kmean/
+13_kmean_seg/
+14_score_kmean/
+16_mlp/
+17_inferrence/
+
+# === Legacy output folders (replaced by the per-script folders above) ===
 figure_plot/
 figure_out/
+output/
 
 # === VSCode ===
 .vscode/

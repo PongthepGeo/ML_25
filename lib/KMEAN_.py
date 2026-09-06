@@ -5,6 +5,7 @@ Shared library for image segmentation and cluster analysis
 
 import os
 import numpy as np
+from pathlib import Path
 from PIL import Image
 import matplotlib
 import matplotlib.pyplot as plt
@@ -20,25 +21,19 @@ try:
 except Exception:
     _HAS_SKIMAGE = False
 
+try:  # shared global plot style (lib/control_plot.py)
+    from .control_plot import PLOT_PARAMS
+except ImportError:
+    from control_plot import PLOT_PARAMS
+matplotlib.rcParams.update(PLOT_PARAMS)
+
 
 # ============================================================================
 # Matplotlib Configuration
 # ============================================================================
 def configure_matplotlib():
-    """Apply consistent matplotlib style across all scripts"""
-    params = {
-        'savefig.dpi': 300,
-        'figure.dpi': 100,
-        'axes.labelsize': 12,
-        'axes.titlesize': 12,
-        'axes.titleweight': 'bold',
-        'legend.fontsize': 10,
-        'xtick.labelsize': 10,
-        'ytick.labelsize': 10,
-        'font.family': 'serif',
-        'font.serif': 'Times New Roman'
-    }
-    matplotlib.rcParams.update(params)
+    """Apply the shared global plot style (lib/control_plot.py)."""
+    matplotlib.rcParams.update(PLOT_PARAMS)
 
 
 # ============================================================================
@@ -316,7 +311,7 @@ def tsne_embed(Xs, seed=0, perplexity=30.0, max_iter=1000):
 # ============================================================================
 # Visualization
 # ============================================================================
-def save_segmentation(figpath_mask, mask_2d, cmap="gray", K=None):
+def save_segmentation(figpath_mask, mask_2d, cmap="gray", K=None, dpi=300):
     """
     Save segmentation mask
 
@@ -329,6 +324,7 @@ def save_segmentation(figpath_mask, mask_2d, cmap="gray", K=None):
     if K is None:
         K = len(np.unique(mask_2d))
 
+    # square mask image -- intentionally not the global 16:9 default
     plt.figure(figsize=(6, 6))
     if K == 2:
         plt.imshow(mask_2d, cmap=cmap, vmin=0, vmax=1)
@@ -336,11 +332,11 @@ def save_segmentation(figpath_mask, mask_2d, cmap="gray", K=None):
         plt.imshow(mask_2d, cmap=cmap)
     plt.axis("off")
     plt.tight_layout()
-    plt.savefig(figpath_mask, dpi=200, bbox_inches="tight", pad_inches=0)
+    plt.savefig(figpath_mask, format="png", dpi=dpi, bbox_inches="tight", pad_inches=0)
     plt.close()
 
 
-def save_side_by_side(figpath, img_arr, mask_2d, K=None):
+def save_side_by_side(figpath, img_arr, mask_2d, K=None, dpi=300):
     """
     Save side-by-side comparison of original image and mask
 
@@ -353,6 +349,7 @@ def save_side_by_side(figpath, img_arr, mask_2d, K=None):
     if K is None:
         K = len(np.unique(mask_2d))
 
+    # two square image panels -- intentionally not the global 16:9 default
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
     plt.imshow(img_arr)
@@ -370,11 +367,11 @@ def save_side_by_side(figpath, img_arr, mask_2d, K=None):
     plt.axis("off")
 
     plt.tight_layout()
-    plt.savefig(figpath, dpi=200, bbox_inches="tight")
+    plt.savefig(figpath, format="png", dpi=dpi, bbox_inches="tight")
     plt.close()
 
 
-def save_cluster_panels(figpath, img_arr, mask_2d, K=None):
+def save_cluster_panels(figpath, img_arr, mask_2d, K=None, dpi=300):
     """
     Save multi-panel visualization showing original image and each cluster separately
 
@@ -398,6 +395,7 @@ def save_cluster_panels(figpath, img_arr, mask_2d, K=None):
         ncols = 4
         nrows = (K + 3) // 4  # +1 for original, round up
 
+    # square image grid -- intentionally not the global 16:9 default
     fig, axes = plt.subplots(nrows, ncols, figsize=(ncols * 4, nrows * 4))
     if nrows == 1 and ncols == 1:
         axes = np.array([[axes]])
@@ -427,7 +425,7 @@ def save_cluster_panels(figpath, img_arr, mask_2d, K=None):
         axes[idx].axis("off")
 
     plt.tight_layout()
-    plt.savefig(figpath, dpi=200, bbox_inches="tight")
+    plt.savefig(figpath, format="png", dpi=dpi, bbox_inches="tight")
     plt.close()
 
 
@@ -442,7 +440,7 @@ def plot_metric_curve(out, Ks, ys, ylabel, highlight_k=None):
         ylabel: Y-axis label
         highlight_k: K value to highlight with marker
     """
-    plt.figure(figsize=(6.0, 4.0))
+    plt.figure()  # global figure.figsize default
     plt.plot(Ks, ys, marker="o")
     if highlight_k is not None and highlight_k in set(Ks):
         i = np.where(Ks == highlight_k)[0][0]
@@ -451,7 +449,7 @@ def plot_metric_curve(out, Ks, ys, ylabel, highlight_k=None):
     plt.ylabel(ylabel)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(out, dpi=200)
+    plt.savefig(out, format="png", bbox_inches="tight")
     plt.close()
 
 
@@ -467,7 +465,7 @@ def plot_tsne_scatter(out, Z, labels, title):
     """
     K = len(np.unique(labels))
 
-    plt.figure(figsize=(8, 6))
+    plt.figure()  # global figure.figsize default
 
     # Choose colormap based on number of clusters
     if K <= 10:
@@ -486,7 +484,7 @@ def plot_tsne_scatter(out, Z, labels, title):
     plt.xlabel("t-SNE Dimension 1")
     plt.ylabel("t-SNE Dimension 2")
     plt.tight_layout()
-    plt.savefig(out, dpi=200)
+    plt.savefig(out, format="png", bbox_inches="tight")
     plt.close()
 
 
@@ -495,18 +493,18 @@ def plot_tsne_scatter(out, Z, labels, title):
 # ============================================================================
 def ensure_output_dir(base_dir, subdir=None):
     """
-    Create output directory structure
+    Create the per-script output directory (our standard: one folder named
+    after the script, e.g. 13_kmean_seg/).
 
     Args:
-        base_dir: Base output directory
-        subdir: Optional subdirectory
+        base_dir: Output directory (normally OUTDIR = Path(<script name>))
+        subdir: Optional subdirectory inside it
 
     Returns:
-        str: Full output path
+        Path: Full output path
     """
+    output_path = Path(base_dir)
     if subdir:
-        output_path = os.path.join(base_dir, subdir)
-    else:
-        output_path = base_dir
-    os.makedirs(output_path, exist_ok=True)
+        output_path = output_path / subdir
+    output_path.mkdir(parents=True, exist_ok=True)
     return output_path

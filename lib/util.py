@@ -5,26 +5,20 @@ import matplotlib as mpl
 import os
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
-params = {
-	'savefig.dpi': 300,  
-	'figure.dpi' : 100,
-	'axes.labelsize':12,  
-	'axes.titlesize':12,
-	'axes.titleweight': 'bold',
-	'legend.fontsize': 10,
-	'xtick.labelsize':10,
-	'ytick.labelsize':10,
-	'font.family': 'serif',
-	'font.serif': 'Times New Roman'
-}
-matplotlib.rcParams.update(params)
+try:  # shared global plot style (lib/control_plot.py)
+	from .control_plot import PLOT_PARAMS
+except ImportError:
+	from control_plot import PLOT_PARAMS
+matplotlib.rcParams.update(PLOT_PARAMS)
 
-def plot_regression(X, y, y_pred):
+def plot_regression(X, y, y_pred, OUTDIR):
+    # tall/narrow depth track -- intentionally not the global 16:9 default
     plt.figure(figsize=(6, 10))
     sns.scatterplot(x=y, y=X.flatten(), label="GR Data", color="red", 
                     s=40, alpha=0.7, edgecolor='black', marker='o')
@@ -36,13 +30,15 @@ def plot_regression(X, y, y_pred):
     plt.title("Linear Regression of GR vs Depth\n(Well: NEWBY, Facies: 2)")
     plt.legend()
     plt.tight_layout()
-    os.makedirs('figure_plot', exist_ok=True)
-    plt.savefig('figure_plot/regression.png', format='png', dpi=300, bbox_inches='tight',
-                transparent=True)
-    print("Figure saved as 'figure_plot/regression.png'")
+    OUTDIR = Path(OUTDIR)
+    OUTDIR.mkdir(parents=True, exist_ok=True)
+    fig_path = OUTDIR / 'regression.png'
+    plt.savefig(fig_path, format='png', bbox_inches='tight')
+    print('Saved figure:', fig_path)
     plt.show()
 
-def plot_classification(df_f2, df_f4):
+def plot_classification(df_f2, df_f4, OUTDIR):
+    # tall/narrow depth track -- intentionally not the global 16:9 default
     plt.figure(figsize=(6, 10))
     # Enhanced scatter plots with better styling
     sns.scatterplot(x="GR", y="Depth", data=df_f2, label="Facies 2", color="blue", 
@@ -55,10 +51,11 @@ def plot_classification(df_f2, df_f4):
     plt.title("GR vs Depth: Facies 2 vs Facies 4 (Well NEWBY)")
     plt.legend()
     plt.tight_layout()
-    os.makedirs('figure_plot', exist_ok=True)
-    plt.savefig('figure_plot/classification.svg', format='svg', dpi=300, bbox_inches='tight',
-                transparent=True)
-    print("Figure saved as 'figure_plot/classification.svg'")
+    OUTDIR = Path(OUTDIR)
+    OUTDIR.mkdir(parents=True, exist_ok=True)
+    fig_path = OUTDIR / 'classification.png'
+    plt.savefig(fig_path, format='png', bbox_inches='tight')
+    print('Saved figure:', fig_path)
     plt.show()
 
 def high_contrast_colors(n: int):
@@ -182,9 +179,9 @@ def map_clusters_to_facies(cluster_labels, true_facies, lithofacies_list, litho_
 
     return cluster_to_name, name_to_color
 
-def scatter_plot(x, y, labels, centers, cluster_to_name, name_to_color,
+def scatter_plot(x, y, labels, centers, cluster_to_name, name_to_color, OUTDIR,
                  title=None, point_size=28, edge_width=0.6, centroid_size=200):
-    fig, ax = plt.subplots(figsize=(8, 6.8), dpi=120)
+    fig, ax = plt.subplots()  # global figure.figsize default
     used_labels = set()
 
     unique_labels = np.unique(labels)
@@ -224,11 +221,13 @@ def scatter_plot(x, y, labels, centers, cluster_to_name, name_to_color,
     ax.set_title(title or 'Well Log Clusters (Facies)')
     ax.grid(alpha=0.25, zorder=0)
 
-    ax.legend(ncol=2, fontsize=9, frameon=True, loc='best')
+    ax.legend(ncol=2, frameon=True, loc='best')
     plt.tight_layout()
-    os.makedirs('figure_plot', exist_ok=True)
-    plt.savefig('figure_plot/cluster.png', format='png', dpi=600, bbox_inches='tight', transparent=True, pad_inches=0)
-    print("Figure saved to 'figure_plot/cluster.png'")
+    OUTDIR = Path(OUTDIR)
+    OUTDIR.mkdir(parents=True, exist_ok=True)
+    fig_path = OUTDIR / 'cluster.png'
+    plt.savefig(fig_path, format='png', bbox_inches='tight')
+    print('Saved figure:', fig_path)
     plt.show()
 
 def compute_metrics(y_true, y_pred):
@@ -253,9 +252,9 @@ def fit_lr(x_vec, y_vec):
     return slope, intercept, predict_fn
 
 def plot_scatter_with_regression(x, y, facies_names, name_to_color,
-                                 per_facies_models, global_model,
+                                 per_facies_models, global_model, OUTDIR,
                                  title='Linear Regression per Facies + Global'):
-    fig, ax = plt.subplots(figsize=(8.6, 6.6), dpi=120)
+    fig, ax = plt.subplots()  # global figure.figsize default
 
     # Scatter by facies with black edges
     plotted = set()
@@ -311,9 +310,11 @@ def plot_scatter_with_regression(x, y, facies_names, name_to_color,
     ax.set_ylabel('ILD_log10')
     ax.set_title(title)
     ax.grid(alpha=0.25, zorder=0)
-    ax.legend(ncol=2, fontsize=9, frameon=True, loc='best')
+    ax.legend(ncol=2, frameon=True, loc='best')
     plt.tight_layout()
-    os.makedirs('figure_plot', exist_ok=True)
-    plt.savefig('figure_plot/linear.png', format='png', dpi=600, bbox_inches='tight', transparent=True, pad_inches=0)
-    print("Figure saved to 'figure_plot/linear.png'")
+    OUTDIR = Path(OUTDIR)
+    OUTDIR.mkdir(parents=True, exist_ok=True)
+    fig_path = OUTDIR / 'linear.png'
+    plt.savefig(fig_path, format='png', bbox_inches='tight')
+    print('Saved figure:', fig_path)
     plt.show()

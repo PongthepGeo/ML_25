@@ -1,10 +1,10 @@
-import os
 import cv2
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from pathlib import Path
 from torch.utils.data import TensorDataset, DataLoader
 from typing import Iterable, Callable
 
@@ -14,10 +14,11 @@ from typing import Iterable, Callable
 IMG_PATH = 'midterm_xgboost/data/img.png'
 LABEL_PATH = 'midterm_xgboost/data/label.png'
 
-TABULAR_DIR = 'tabular'
-TABULAR_FILE = 'table.csv'
+# Output folder (one folder per script, named after the script)
+OUTDIR = Path('16_mlp')
+OUTDIR.mkdir(parents=True, exist_ok=True)
 
-OUTPUT_DIR = 'figure_out/mlp_supervised'
+TABULAR_FILE = 'table.csv'
 PRED_MASK_FILE = 'predicted_mask.png'
 MODEL_WEIGHT_FILE = 'mlp_model.pth'
 
@@ -116,8 +117,9 @@ def build_tabular_from_images(img_path: str,
     df = pd.DataFrame(data)
 
     # --- Save CSV ---
-    os.makedirs(tabular_dir, exist_ok=True)
-    tabular_path = os.path.join(tabular_dir, tabular_file)
+    tabular_dir = Path(tabular_dir)
+    tabular_dir.mkdir(parents=True, exist_ok=True)
+    tabular_path = tabular_dir / tabular_file
     df.to_csv(tabular_path, index=False)
     print(f"[Tabular] Table saved to {tabular_path}")
     print(f"[Tabular] Shape: {df.shape}")
@@ -139,7 +141,7 @@ def main():
     X_numpy, y_numpy, (H, W) = build_tabular_from_images(
         IMG_PATH,
         LABEL_PATH,
-        TABULAR_DIR,
+        OUTDIR,
         TABULAR_FILE
     )
 
@@ -220,14 +222,13 @@ def main():
     # Map 0->0, 1->255 for visualization
     pred_vis = (pred_map * 255).astype(np.uint8)
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    out_path = os.path.join(OUTPUT_DIR, PRED_MASK_FILE)
-    cv2.imwrite(out_path, pred_vis)
+    out_path = OUTDIR / PRED_MASK_FILE
+    cv2.imwrite(str(out_path), pred_vis)
     print(f"[ok] Prediction mask saved to {out_path}")
     print(f"[ok] Predicted mask shape: {pred_map.shape}")
 
     # 6) Save model weights
-    model_path = os.path.join(OUTPUT_DIR, MODEL_WEIGHT_FILE)
+    model_path = OUTDIR / MODEL_WEIGHT_FILE
     torch.save({
         'model_state_dict': model.state_dict(),
         'input_dim': X_tensor.shape[1],

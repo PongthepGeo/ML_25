@@ -1,5 +1,14 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
+from pathlib import Path
+from lib.control_plot import PLOT_PARAMS  # shared global plot style
+
+matplotlib.rcParams.update(PLOT_PARAMS)
+
+# Output folder (one folder per script, named after the script)
+OUTDIR = Path("08_residuals")
+OUTDIR.mkdir(parents=True, exist_ok=True)
 
 # Generate sample data points {(x_i, y_i)}_{i=1}^n
 np.random.seed(42)
@@ -86,8 +95,8 @@ print(f"Sum of residuals: {np.sum(residuals):.3f}")
 print(f"Sum of squared residuals: {np.sum(residuals**2):.3f}")
 print(f"Mean squared error: {np.mean(residuals**2):.3f}")
 
-# Visualization
-plt.figure(figsize=(10, 6))
+# Visualization (global figure.figsize default)
+plt.figure()
 
 # Plot data points
 plt.scatter(x_values, y_values, color='blue', s=100, alpha=0.7, label='Data points (xᵢ, yᵢ)')
@@ -110,6 +119,9 @@ plt.title('Linear Regression: Data, Predictions, and Residuals')
 plt.legend()
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
+fig_residuals = OUTDIR / 'residuals.png'
+plt.savefig(fig_residuals, format='png', bbox_inches='tight')
+print('Saved figure:', fig_residuals)
 plt.show()
 
 print(f"\n✅ The green dashed lines show the residuals (errors)")

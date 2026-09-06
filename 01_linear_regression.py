@@ -1,7 +1,16 @@
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 import numpy as np
+import matplotlib
+from pathlib import Path
+from lib.control_plot import PLOT_PARAMS  # shared global plot style
 from lib.util import plot_regression
+
+matplotlib.rcParams.update(PLOT_PARAMS)
+
+# Output folder (one folder per script, named after the script)
+OUTDIR = Path("01_linear_regression")
+OUTDIR.mkdir(parents=True, exist_ok=True)
 
 # 1) Load CSV
 df = pd.read_csv("dataset/well_log.csv")
@@ -34,8 +43,4 @@ for index, value in enumerate(y):
 # print(dist_/len(y))
 print(dist_.mean())
 
-
-
-    
-
-# plot_regression(X, y, y_pred)
+plot_regression(X, y, y_pred, OUTDIR)

@@ -13,31 +13,25 @@ TOY_DATA = [[0, 0], [1, 0], [0, 1], [5, 5], [6, 5], [4, 6]]
 N_CLUSTERS = 2
 RANDOM_SEED = 0
 
-# Output configuration
-OUTPUT_BASE_DIR = "figure_out"
-OUTPUT_SUBDIR = "kmeans_basic"
-
 # ============================================================================
 # IMPORTS
 # ============================================================================
 import numpy as np
 from sklearn.cluster import KMeans
-import sys
-import os
+from pathlib import Path
 
-# Add lib directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
-from KMEAN_ import configure_matplotlib, ensure_output_dir
+from lib.KMEAN_ import configure_matplotlib
+
+# Output folder (one folder per script, named after the script)
+OUTDIR = Path("12_kmean")
+OUTDIR.mkdir(parents=True, exist_ok=True)
 
 # ============================================================================
 # MAIN EXECUTION
 # ============================================================================
 def main():
-    # Configure plotting style
+    # Configure plotting style (shared global plot style)
     configure_matplotlib()
-
-    # Prepare output directory
-    output_dir = ensure_output_dir(OUTPUT_BASE_DIR, OUTPUT_SUBDIR)
 
     # Convert toy dataset to numpy array
     X = np.array(TOY_DATA)
@@ -62,7 +56,7 @@ def main():
         else:
             colors = cm.viridis(labels / N_CLUSTERS)
 
-        plt.figure(figsize=(8, 6))
+        plt.figure()  # global figure.figsize default
         plt.scatter(X[:, 0], X[:, 1], c=colors, s=100, edgecolors='k', linewidths=0.5)
         plt.scatter(
             kmeans.cluster_centers_[:, 0],
@@ -82,8 +76,9 @@ def main():
         plt.grid(True, alpha=0.3)
 
         # Save figure
-        output_path = os.path.join(output_dir, f"kmeans_basic_K{N_CLUSTERS}.png")
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.tight_layout()
+        output_path = OUTDIR / f"kmeans_basic_K{N_CLUSTERS}.png"
+        plt.savefig(output_path, format="png", bbox_inches="tight")
         print(f"[ok] Saved plot to: {output_path}")
 
         plt.show()

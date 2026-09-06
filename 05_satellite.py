@@ -1,33 +1,135 @@
 import rasterio
 # pip install rasterio
-import skimage.io as skio
-# pip install scikit-image
-# pip install imagecodecs
+
+import matplotlib
 import matplotlib.pyplot as plt
-import os
 
-tiff_file = 'dataset/sen2_2024_04_12.tif'
+from pathlib import Path
+from lib.control_plot import PLOT_PARAMS
 
-header_information = rasterio.open(tiff_file).profile
-# print(header_information)
-img = skio.imread(tiff_file, plugin='tifffile')
-# print(f'Image shape: {img.shape}')
 
-# The orginal TIFF contains B2 (blue), B3 (green), B4 (red), and B8 bands.
-red = img[:, :, 2]; green = img[:, :, 1]; blue = img[:, :, 0]
-# Create a list of channels with their titles and colormaps
+# ============================================================
+# GLOBAL PLOT STYLE
+# ============================================================
+matplotlib.rcParams.update(PLOT_PARAMS)
+
+
+# ============================================================
+# OUTPUT
+# ============================================================
+OUTDIR = Path("05_satellite")
+OUTDIR.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+
+# ============================================================
+# INPUT
+# ============================================================
+tiff_file = "dataset/sen2_2024_04_12.tif"
+
+
+# ============================================================
+# READ SENTINEL-2 TIFF
+#
+# Band 1 = B2 Blue
+# Band 2 = B3 Green
+# Band 3 = B4 Red
+# Band 4 = B8 NIR
+# ============================================================
+with rasterio.open(tiff_file) as src:
+
+    print("=" * 60)
+    print("SATELLITE TIFF INFORMATION")
+    print("=" * 60)
+
+    print(f"Width  : {src.width}")
+    print(f"Height : {src.height}")
+    print(f"Bands  : {src.count}")
+    print(f"CRS    : {src.crs}")
+    print(f"Dtype  : {src.dtypes}")
+
+    blue = src.read(1)
+    green = src.read(2)
+    red = src.read(3)
+
+
+# ============================================================
+# CHANNEL LIST
+# ============================================================
 channels = [
-    (red, 'Red Channel', 'Reds'),
-    (green, 'Green Channel', 'Greens'),
-    (blue, 'Blue Channel', 'Blues')
+    (
+        red,
+        "Red Channel",
+        "Reds"
+    ),
+    (
+        green,
+        "Green Channel",
+        "Greens"
+    ),
+    (
+        blue,
+        "Blue Channel",
+        "Blues"
+    )
 ]
 
-# Plot the separate red, green, and blue channels
-fig, ax = plt.subplots(1, 3, figsize=(25, 15))
-for i, (channel, title, cmap) in enumerate(channels):
-    ax[i].imshow(channel, cmap=cmap)
-    ax[i].set_title(title)
-    ax[i].axis('off')
-os.makedirs('figure_plot', exist_ok=True)
-plt.savefig('figure_plot/' + 'satellite' + '.png', format='png', bbox_inches='tight', transparent=True, pad_inches=0)
+
+# ============================================================
+# PLOT RGB CHANNELS
+# ============================================================
+fig, ax = plt.subplots(
+    1,
+    3,
+    figsize=(18, 6)
+)
+
+
+for i, (
+    channel,
+    title,
+    cmap
+) in enumerate(channels):
+
+    ax[i].imshow(
+        channel,
+        cmap=cmap
+    )
+
+    ax[i].set_title(
+        title
+    )
+
+    ax[i].axis(
+        "off"
+    )
+
+
+plt.tight_layout()
+
+
+# ============================================================
+# SAVE
+# ============================================================
+fig_channels = (
+    OUTDIR
+    / "satellite_rgb_channels.png"
+)
+
+
+plt.savefig(
+    fig_channels,
+    format="png",
+    bbox_inches="tight"
+)
+
+
+print(
+    f"Saved figure: {fig_channels}"
+)
+
+
 plt.show()
+plt.close()

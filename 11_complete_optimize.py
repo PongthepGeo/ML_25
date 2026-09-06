@@ -1,5 +1,14 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
+from pathlib import Path
+from lib.control_plot import PLOT_PARAMS  # shared global plot style
+
+matplotlib.rcParams.update(PLOT_PARAMS)
+
+# Output folder (one folder per script, named after the script)
+OUTDIR = Path("11_complete_optimize")
+OUTDIR.mkdir(parents=True, exist_ok=True)
 
 # Generate sample data points {(x_i, y_i)}_{i=1}^n
 np.random.seed(42)
@@ -119,6 +128,7 @@ print("CONVERGENCE ANALYSIS")
 print("="*70)
 
 # Create comprehensive visualization
+# 2x3 panel -- intentionally not the global 16:9 default
 fig = plt.figure(figsize=(20, 15))
 
 # Plot 1: Loss convergence curves
@@ -127,12 +137,12 @@ colors = ['red', 'blue', 'green', 'orange', 'purple']
 for i, lr in enumerate(learning_rates):
     epochs = range(len(all_losses[lr]))
     plt.semilogy(epochs, all_losses[lr], color=colors[i], linewidth=2, 
-                label=f'η = {lr}', marker='o' if len(epochs) < 20 else None, markersize=3)
+                label=rf'$\eta = {lr}$', marker='o' if len(epochs) < 20 else None, markersize=3)
 
 plt.axhline(y=analytical_loss, color='black', linestyle='--', linewidth=2, 
-           label=f'Analytical minimum: {analytical_loss:.2e}')
+           label=rf'Analytical minimum: $L={analytical_loss:.2e}$')
 plt.xlabel('Epoch')
-plt.ylabel('Loss L(β)')
+plt.ylabel(r'Loss $L(\beta)$')
 plt.title('Loss Convergence (Log Scale)')
 plt.legend()
 plt.grid(True, alpha=0.3)
@@ -142,14 +152,14 @@ ax2 = plt.subplot(2, 3, 2)
 for i, lr in enumerate(learning_rates):
     path = all_paths[lr]
     plt.plot(path[:, 0], path[:, 1], color=colors[i], linewidth=2, 
-            label=f'η = {lr}', marker='o' if len(path) < 20 else None, markersize=4)
+            label=rf'$\eta = {lr}$', marker='o' if len(path) < 20 else None, markersize=4)
     plt.plot(path[0, 0], path[0, 1], 's', color=colors[i], markersize=8)  # Start
     plt.plot(path[-1, 0], path[-1, 1], 'X', color=colors[i], markersize=8)  # End
 
 plt.plot(beta_analytical[0,0], beta_analytical[1,0], '*', color='black', 
          markersize=15, label='Analytical solution')
-plt.xlabel('β₀')
-plt.ylabel('β₁')
+plt.xlabel(r'$\beta_0$')
+plt.ylabel(r'$\beta_1$')
 plt.title('Parameter Space Convergence Paths')
 plt.legend()
 plt.grid(True, alpha=0.3)
@@ -172,12 +182,12 @@ plt.clabel(contour, inline=True, fontsize=8, fmt='%.3f')
 for i, lr in enumerate(learning_rates):
     path = all_paths[lr]
     plt.plot(path[:, 0], path[:, 1], color=colors[i], linewidth=2, 
-            label=f'η = {lr}', alpha=0.8)
+            label=rf'$\eta = {lr}$', alpha=0.8)
 
 plt.plot(beta_analytical[0,0], beta_analytical[1,0], '*', color='black', 
          markersize=15, label='Global minimum')
-plt.xlabel('β₀')
-plt.ylabel('β₁')
+plt.xlabel(r'$\beta_0$')
+plt.ylabel(r'$\beta_1$')
 plt.title('Loss Contours with Optimization Paths')
 plt.legend()
 
@@ -193,12 +203,12 @@ for i, lr in enumerate(learning_rates):
     
     if len(grad_norms) > 0:
         plt.semilogy(range(len(grad_norms)), grad_norms, color=colors[i], 
-                    linewidth=2, label=f'η = {lr}')
+                    linewidth=2, label=rf'$\eta = {lr}$')
 
 plt.axhline(y=tolerance, color='black', linestyle='--', linewidth=1, 
-           label=f'Tolerance: {tolerance:.2e}')
+           label=rf'Tolerance: $\|\nabla L\|={tolerance:.2e}$')
 plt.xlabel('Epoch')
-plt.ylabel('||∇L(β)||')
+plt.ylabel(r'$\|\nabla L(\beta)\|$')
 plt.title('Gradient Norm Evolution')
 plt.legend()
 plt.grid(True, alpha=0.3)
@@ -214,10 +224,10 @@ for i, lr in enumerate(learning_rates):
             step_sizes.append(step)
         
         plt.plot(range(1, len(step_sizes) + 1), step_sizes, color=colors[i], 
-                linewidth=2, label=f'η = {lr}')
+                linewidth=2, label=rf'$\eta = {lr}$')
 
 plt.xlabel('Epoch')
-plt.ylabel('||β_{k+1} - β_k||')
+plt.ylabel(r'$\|\beta_{k+1}-\beta_k\|$')
 plt.title('Step Size Evolution')
 plt.legend()
 plt.grid(True, alpha=0.3)
@@ -256,13 +266,16 @@ for i, epoch in enumerate(epochs_to_show):
 y_line_analytical = beta_analytical[0,0] + beta_analytical[1,0] * x_line
 plt.plot(x_line, y_line_analytical, 'g--', linewidth=3, label='Analytical solution')
 
-plt.xlabel('x')
-plt.ylabel('y')
-plt.title(f'Fit Evolution (η = {best_lr})')
+plt.xlabel(r'$x$')
+plt.ylabel(r'$y$')
+plt.title(rf'Fit Evolution ($\eta={best_lr}$)')
 plt.legend()
 plt.grid(True, alpha=0.3)
 
 plt.tight_layout()
+fig_analysis = OUTDIR / 'gradient_descent_analysis.png'
+plt.savefig(fig_analysis, format='png', bbox_inches='tight')
+print('Saved figure:', fig_analysis)
 plt.show()
 
 print(f"\n🎯 SUMMARY:")

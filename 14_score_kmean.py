@@ -6,10 +6,8 @@ Scans K values, computes metrics, and creates t-SNE embeddings
 # ============================================================================
 # CONFIGURATION - All variables at top
 # ============================================================================
-# Input/Output paths
+# Input paths
 DEFAULT_IMAGE_PATH = "dataset/high.png"
-OUTPUT_BASE_DIR = "figure_out"
-OUTPUT_SUBDIR = "kmeans_kselect"
 
 # Feature extraction parameters
 COLORSPACE = "lab"  # 'lab' or 'rgb'
@@ -31,15 +29,13 @@ TSNE_MAX_ITER = 1000
 # ============================================================================
 # IMPORTS
 # ============================================================================
-import os
 import sys
 import json
 import numpy as np
+from pathlib import Path
 from sklearn.cluster import KMeans
 
-# Add lib directory to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
-from KMEAN_ import (
+from lib.KMEAN_ import (
     configure_matplotlib,
     load_image,
     build_features,
@@ -50,8 +46,11 @@ from KMEAN_ import (
     tsne_embed,
     plot_metric_curve,
     plot_tsne_scatter,
-    ensure_output_dir
 )
+
+# Output folder (one folder per script, named after the script)
+OUTDIR = Path("14_score_kmean")
+OUTDIR.mkdir(parents=True, exist_ok=True)
 
 # ============================================================================
 # MAIN EXECUTION
@@ -65,11 +64,8 @@ def main():
     k_max = int(sys.argv[5]) if len(sys.argv) > 5 else K_MAX
     seed = int(sys.argv[6]) if len(sys.argv) > 6 else RANDOM_SEED
 
-    # Configure matplotlib
+    # Configure matplotlib (shared global plot style)
     configure_matplotlib()
-
-    # Prepare output directory
-    output_dir = ensure_output_dir(OUTPUT_BASE_DIR, OUTPUT_SUBDIR)
 
     # Load image and build features
     _, arr = load_image(img_path)
@@ -89,7 +85,7 @@ def main():
     Z = tsne_embed(Xs, seed=seed, perplexity=TSNE_PERPLEXITY, max_iter=TSNE_MAX_ITER)
 
     # Save metrics CSV
-    metrics_path = os.path.join(output_dir, "k_metrics.csv")
+    metrics_path = OUTDIR / "k_metrics.csv"
     with open(metrics_path, "w") as f:
         f.write("K,inertia,silhouette,davies_bouldin,calinski_harabasz,avg_rank,elbow_distance\n")
         for i, K in enumerate(Ks):
@@ -97,32 +93,32 @@ def main():
 
     # Save metric plots
     plot_metric_curve(
-        os.path.join(output_dir, "elbow_inertia.png"),
+        OUTDIR / "elbow_inertia.png",
         Ks, inertia,
         "Inertia (lower better)",
         highlight_k=elbow_k
     )
     plot_metric_curve(
-        os.path.join(output_dir, "silhouette.png"),
+        OUTDIR / "silhouette.png",
         Ks, sil,
         "Silhouette (higher better)",
         highlight_k=best_k
     )
     plot_metric_curve(
-        os.path.join(output_dir, "davies_bouldin.png"),
+        OUTDIR / "davies_bouldin.png",
         Ks, db,
         "Davies-Bouldin (lower better)",
         highlight_k=best_k
     )
     plot_metric_curve(
-        os.path.join(output_dir, "calinski_harabasz.png"),
+        OUTDIR / "calinski_harabasz.png",
         Ks, ch,
         "Calinski-Harabasz (higher better)",
         highlight_k=best_k
     )
 
     # Save t-SNE scatter
-    tsne_path = os.path.join(output_dir, f"tsne_scatter_K{best_k}.png")
+    tsne_path = OUTDIR / f"tsne_scatter_K{best_k}.png"
     plot_tsne_scatter(tsne_path, Z, km_best.labels_, f"t-SNE (sample={len(Xs)}) - K={best_k}")
 
     # Save summary JSON and text
@@ -138,13 +134,13 @@ def main():
         "coords_weight": coords_weight,
         "img": img_path,
     }
-    with open(os.path.join(output_dir, "best_k.json"), "w") as f:
+    with open(OUTDIR / "best_k.json", "w") as f:
         json.dump(summary, f, indent=2)
-    with open(os.path.join(output_dir, "best_k.txt"), "w") as f:
+    with open(OUTDIR / "best_k.txt", "w") as f:
         f.write(str(best_k) + "\n")
 
     # Report results
-    print("[ok] Saved outputs to:", output_dir)
+    print("[ok] Saved outputs to:", OUTDIR)
     print("[ok] elbow_k =", elbow_k, "| best_k (consensus) =", best_k)
     print("[ok] t-SNE scatter:", tsne_path)
     print("[ok] metrics CSV:", metrics_path)

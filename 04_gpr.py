@@ -1,8 +1,16 @@
 from readgssi import readgssi
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+from pathlib import Path
+from lib.control_plot import PLOT_PARAMS  # shared global plot style
 # pip install readgssi
+
+matplotlib.rcParams.update(PLOT_PARAMS)
+
+# Output folder (one folder per script, named after the script)
+OUTDIR = Path("04_gpr")
+OUTDIR.mkdir(parents=True, exist_ok=True)
 
 GPR_file = 'dataset/line_001.DZT'
 
@@ -24,20 +32,41 @@ print(f'data type: {extracted_values.dtype}')
 signal = np.zeros((extracted_values.shape[0], extracted_values.shape[1]))
 signal[100:, :] = extracted_values[100:, :]
 
-plt.imshow(signal, cmap='Greys')
+# Radargram (global figure.figsize default)
+plt.figure()
+plt.imshow(signal, cmap='Greys', aspect='auto')
+plt.title('GPR radargram (top mute applied)')
+plt.xlabel('Trace number')
+plt.ylabel('Two-way travel time (sample)')
+plt.tight_layout()
+fig_section = OUTDIR / 'gpr_section.png'
+plt.savefig(fig_section, format='png', bbox_inches='tight')
 plt.show()
 
+# Single trace
 trace = signal[:, 400]
 axis_x = np.arange(0, trace.shape[0])
+# Tall/narrow single trace -- intentionally not the global 16:9 default
+plt.figure(figsize=(5, 10))
 plt.plot(trace, axis_x)
 plt.gca().invert_yaxis()
+plt.title('Single trace (#400)')
+plt.xlabel('Amplitude')
+plt.ylabel('Two-way travel time (sample)')
+plt.tight_layout()
+fig_trace = OUTDIR / 'gpr_trace.png'
+plt.savefig(fig_trace, format='png', bbox_inches='tight')
 plt.show()
-# # Plot the GPR data
-# plt.figure(figsize=(15, 10))
-# plt.imshow(extracted_values, cmap='Greys')
+
+print('Saved figures:')
+print(' -', fig_section)
+print(' -', fig_trace)
+# # Plot the raw GPR data (no top mute)
+# plt.figure()
+# plt.imshow(extracted_values, cmap='Greys', aspect='auto')
 # plt.title('GPR at Accounting Department')
 # plt.xlabel('Trace number')
 # plt.ylabel('Two-way travel time (ms)')
-# os.makedirs('figure_plot', exist_ok=True)
-# plt.savefig('figure_plot/' + 'GPR' + '.svg', format='svg', bbox_inches='tight', transparent=True, pad_inches=0)
+# plt.tight_layout()
+# plt.savefig(OUTDIR / 'gpr_raw.png', format='png', bbox_inches='tight')
 # plt.show()

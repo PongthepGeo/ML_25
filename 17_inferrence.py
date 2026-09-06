@@ -1,17 +1,21 @@
-import os
 import cv2
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+from pathlib import Path
 from typing import Iterable, Callable
 
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
-MODEL_PATH = 'figure_out/mlp_supervised/mlp_model.pth'
+MODEL_PATH = '16_mlp/mlp_model.pth'  # weights written by 16_mlp.py
 TEST_IMG_PATH = 'midterm_xgboost/data/img.png'  # Path to test image
-OUTPUT_DIR = 'figure_out/mlp_inference'
+
+# Output folder (one folder per script, named after the script)
+OUTDIR = Path('17_inferrence')
+OUTDIR.mkdir(parents=True, exist_ok=True)
+
 INFERENCE_MASK_FILE = 'inference_mask.png'
 
 # ============================================================================
@@ -57,7 +61,7 @@ def load_model(model_path: str, device: str):
         model: The loaded MLP model
         metadata: Dictionary containing model configuration
     """
-    if not os.path.exists(model_path):
+    if not Path(model_path).exists():
         raise FileNotFoundError(f"Model file not found: {model_path}")
 
     print(f"[Info] Loading model from {model_path}")
@@ -166,9 +170,8 @@ def main():
     # Map 0->0 (black), 1->255 (white) for visualization
     pred_vis = (pred_map * 255).astype(np.uint8)
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    out_path = os.path.join(OUTPUT_DIR, INFERENCE_MASK_FILE)
-    cv2.imwrite(out_path, pred_vis)
+    out_path = OUTDIR / INFERENCE_MASK_FILE
+    cv2.imwrite(str(out_path), pred_vis)
 
     print(f"\n[ok] Inference mask saved to {out_path}")
     print(f"[ok] Prediction shape: {pred_map.shape}")
@@ -183,8 +186,8 @@ def main():
         green_color = np.array([0, 255, 0], dtype=np.uint8)
         overlay[mask] = (original_img[mask] * 0.6 + green_color * 0.4).astype(np.uint8)
 
-        overlay_path = os.path.join(OUTPUT_DIR, 'inference_overlay.png')
-        cv2.imwrite(overlay_path, overlay)
+        overlay_path = OUTDIR / 'inference_overlay.png'
+        cv2.imwrite(str(overlay_path), overlay)
         print(f"[ok] Overlay image saved to {overlay_path}")
 
 if __name__ == "__main__":

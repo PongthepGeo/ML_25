@@ -9,11 +9,19 @@
 #
 # Assumes columns: 'GR', 'ILD_log10', 'Facies'
 
-import os
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
+from pathlib import Path
+from lib.control_plot import PLOT_PARAMS  # shared global plot style
 from lib.util import high_contrast_colors, build_code_to_name, compute_metrics, fit_lr, plot_scatter_with_regression
+
+matplotlib.rcParams.update(PLOT_PARAMS)
+
+# Output folder (one folder per script, named after the script)
+OUTDIR = Path("06_linear_model")
+OUTDIR.mkdir(parents=True, exist_ok=True)
 
 # -----------------------
 # Config & data loading
@@ -97,6 +105,7 @@ plot_scatter_with_regression(
     x, y, facies_names, name_to_color,
     per_facies_models,
     global_model=(g_slope, g_intercept, g_predict),
+    OUTDIR=OUTDIR,
     title='Well Log: ILD_log10 vs GR — Linear Fits per Facies + Global'
 )
 
@@ -114,6 +123,7 @@ pd.set_option('display.float_format', lambda v: f'{v:0.4f}')
 print("\nLinear Regression Summary (ILD_log10 ~ GR):")
 print(summary_df.to_string(index=False))
 
-# Optional: save summary
-out_dir = 'output'; os.makedirs(out_dir, exist_ok=True)
-summary_df.to_csv(os.path.join(out_dir, 'linear_regression_summary.csv'), index=False)
+# Save summary table next to the figure
+summary_path = OUTDIR / 'linear_regression_summary.csv'
+summary_df.to_csv(summary_path, index=False)
+print('Saved table:', summary_path)

@@ -1,9 +1,18 @@
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
+from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
+from lib.control_plot import PLOT_PARAMS  # shared global plot style
 from lib.util import high_contrast_colors, compute_kmeans, build_code_to_name, map_clusters_to_facies, scatter_plot
+
+matplotlib.rcParams.update(PLOT_PARAMS)
+
+# Output folder (one folder per script, named after the script)
+OUTDIR = Path("07_clustering")
+OUTDIR.mkdir(parents=True, exist_ok=True)
 
 # -----------------------
 # Config & data loading
@@ -41,6 +50,7 @@ scatter_plot(
     x, y, labels, centers,
     cluster_to_name=cluster_to_name,
     name_to_color=name_to_color,
+    OUTDIR=OUTDIR,
     title='Well Log Clusters (Facies)'
 )
 
@@ -48,6 +58,10 @@ scatter_plot(
 centroids_df = pd.DataFrame(centers, columns=['GR_center', 'ILD_log10_center'])
 centroids_df.index.name = 'ClusterID (0-based after optional reordering)'
 print("\nCentroids (original units):\n", centroids_df)
+
+centroids_path = OUTDIR / 'centroids.csv'
+centroids_df.to_csv(centroids_path)
+print('Saved table:', centroids_path)
 
 print("\nCluster → Facies mapping:")
 for cid in sorted(cluster_to_name):
