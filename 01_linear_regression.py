@@ -15,7 +15,7 @@ OUTDIR.mkdir(parents=True, exist_ok=True)
 # 1) Load CSV
 df = pd.read_csv("dataset/well_log.csv")
 
-# 2–4) Filter by Well Name and Facies
+# 2-4) Filter by Well Name and Facies
 df_filtered = df[(df["Well Name"] == "NEWBY") & (df["Facies"] == 2)]
 
 # 5) Sort by Depth

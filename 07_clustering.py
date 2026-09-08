@@ -63,6 +63,6 @@ centroids_path = OUTDIR / 'centroids.csv'
 centroids_df.to_csv(centroids_path)
 print('Saved table:', centroids_path)
 
-print("\nCluster → Facies mapping:")
+print("\nCluster -> Facies mapping:")
 for cid in sorted(cluster_to_name):
     print(f"  Cluster {cid} -> {cluster_to_name[cid]}")

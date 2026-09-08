@@ -106,7 +106,7 @@ plot_scatter_with_regression(
     per_facies_models,
     global_model=(g_slope, g_intercept, g_predict),
     OUTDIR=OUTDIR,
-    title='Well Log: ILD_log10 vs GR — Linear Fits per Facies + Global'
+    title='Well Log: ILD_log10 vs GR - Linear Fits per Facies + Global'
 )
 
 # -----------------------

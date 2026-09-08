@@ -24,7 +24,7 @@ print("MULTI-EPOCH GRADIENT DESCENT FOR LINEAR REGRESSION")
 print("=" * 70)
 
 # Display the data
-print(f"\n📊 Data: {{(x_i, y_i)}}_{{{1}}}^{{{n}}}")
+print(f"\nData: {{(x_i, y_i)}}_{{{1}}}^{{{n}}}")
 for i in range(n):
     print(f"(x_{i+1}, y_{i+1}) = ({x_values[i]:.1f}, {y_values[i]:.2f})")
 
@@ -32,7 +32,7 @@ for i in range(n):
 X = np.column_stack([np.ones(n), x_values])
 y = y_values.reshape(-1, 1)
 
-print(f"\n📐 Design Matrix X and response vector y:")
+print(f"\nDesign Matrix X and response vector y:")
 print("X =")
 print(X)
 print(f"y = {y.flatten()}")
@@ -41,7 +41,7 @@ print(f"y = {y.flatten()}")
 beta_analytical = np.linalg.inv(X.T @ X) @ (X.T @ y)
 residuals_analytical = X @ beta_analytical - y
 analytical_loss = (1/(2*n)) * np.sum(residuals_analytical**2)
-print(f"\n✅ Analytical Solution: β̂ = [{beta_analytical[0,0]:.6f}, {beta_analytical[1,0]:.6f}]ᵀ")
+print(f"\nAnalytical Solution: beta_hat = [{beta_analytical[0,0]:.6f}, {beta_analytical[1,0]:.6f}]^T")
 print(f"   Minimum Loss: {analytical_loss:.8f}")
 
 print(f"\n" + "="*70)
@@ -68,12 +68,12 @@ initial_beta = np.array([[1.0], [1.0]])
 all_paths = {}
 all_losses = {}
 
-print(f"🚀 Starting Parameters: β₀ = [{initial_beta.flatten()}]")
-print(f"📈 Running gradient descent with different learning rates...")
+print(f"Starting Parameters: beta_0 = [{initial_beta.flatten()}]")
+print(f"Running gradient descent with different learning rates...")
 
 for lr in learning_rates:
     print(f"\n{'='*50}")
-    print(f"Learning Rate η = {lr}")
+    print(f"Learning Rate eta = {lr}")
     print(f"{'='*50}")
     
     # Initialize for this run
@@ -82,7 +82,7 @@ for lr in learning_rates:
     losses = [compute_loss(beta, X, y, n)]
     gradients = []
     
-    print(f"Epoch   0: β = [{beta[0,0]:.6f}, {beta[1,0]:.6f}], Loss = {losses[0]:.8f}")
+    print(f"Epoch   0: beta = [{beta[0,0]:.6f}, {beta[1,0]:.6f}], Loss = {losses[0]:.8f}")
     
     for epoch in range(1, max_epochs + 1):
         # Compute gradient
@@ -100,24 +100,24 @@ for lr in learning_rates:
         
         # Print every 5 epochs or if converged
         if epoch % 5 == 0 or gradient_norm < tolerance:
-            print(f"Epoch {epoch:3d}: β = [{beta[0,0]:.6f}, {beta[1,0]:.6f}], Loss = {current_loss:.8f}, ||∇L|| = {gradient_norm:.8f}")
+            print(f"Epoch {epoch:3d}: beta = [{beta[0,0]:.6f}, {beta[1,0]:.6f}], Loss = {current_loss:.8f}, ||grad L|| = {gradient_norm:.8f}")
         
         # Check convergence
         if gradient_norm < tolerance:
-            print(f"✅ Converged after {epoch} epochs (||∇L|| = {gradient_norm:.2e} < {tolerance:.2e})")
+            print(f"Converged after {epoch} epochs (||grad L|| = {gradient_norm:.2e} < {tolerance:.2e})")
             break
         
         # Check for divergence
         if current_loss > 1000:
-            print(f"❌ Diverged at epoch {epoch} (Loss = {current_loss:.2f})")
+            print(f"Diverged at epoch {epoch} (Loss = {current_loss:.2f})")
             break
     
     final_error = np.linalg.norm(beta - beta_analytical)
-    print(f"📊 Final Results:")
-    print(f"   • Final β = [{beta[0,0]:.6f}, {beta[1,0]:.6f}]")
-    print(f"   • Final Loss = {current_loss:.8f}")
-    print(f"   • Distance from analytical solution: {final_error:.8f}")
-    print(f"   • Total epochs: {len(losses)-1}")
+    print(f"Final Results:")
+    print(f"   - Final beta = [{beta[0,0]:.6f}, {beta[1,0]:.6f}]")
+    print(f"   - Final Loss = {current_loss:.8f}")
+    print(f"   - Distance from analytical solution: {final_error:.8f}")
+    print(f"   - Total epochs: {len(losses)-1}")
     
     # Store for visualization
     all_paths[lr] = np.array([p.flatten() for p in path])
@@ -278,21 +278,21 @@ plt.savefig(fig_analysis, format='png', bbox_inches='tight')
 print('Saved figure:', fig_analysis)
 plt.show()
 
-print(f"\n🎯 SUMMARY:")
-print(f"   • Tested learning rates: {learning_rates}")
-print(f"   • Best learning rate: η = {best_lr}")
-print(f"   • Convergence depends on learning rate choice")
-print(f"   • Too small η: slow convergence")
-print(f"   • Too large η: potential oscillation/divergence")
-print(f"   • Optimal η balances speed and stability")
-print(f"   • All successful runs converged to analytical solution")
+print(f"\nSUMMARY:")
+print(f"   - Tested learning rates: {learning_rates}")
+print(f"   - Best learning rate: eta = {best_lr}")
+print(f"   - Convergence depends on learning rate choice")
+print(f"   - Too small eta: slow convergence")
+print(f"   - Too large eta: potential oscillation/divergence")
+print(f"   - Optimal eta balances speed and stability")
+print(f"   - All successful runs converged to analytical solution")
 
-print(f"\n📈 CONVERGENCE DETAILS:")
+print(f"\nCONVERGENCE DETAILS:")
 for lr in learning_rates:
     final_beta = all_paths[lr][-1].reshape(-1, 1)
     final_loss = all_losses[lr][-1]
     epochs_used = len(all_paths[lr]) - 1
     error_from_analytical = np.linalg.norm(final_beta - beta_analytical)
     
-    print(f"   η = {lr:4.2f}: {epochs_used:2d} epochs, "
+    print(f"   eta = {lr:4.2f}: {epochs_used:2d} epochs, "
           f"Loss = {final_loss:.2e}, Error = {error_from_analytical:.2e}")
