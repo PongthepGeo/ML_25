@@ -25,6 +25,14 @@ def gaussian_pdf(x, mean, std):
 # =========================================================
 # Reference label colors
 # =========================================================
+# Mineral identity behind each label color (ore microscopy):
+#   Grey   = Background
+#   Blue   = Pyrite
+#   Green  = Sphalerite
+#   Yellow = Galena
+# Not present in the current labeled images (img_0037 / img_0145):
+#   Red    = Chalcopyrite
+#   Pink   = Gold
 reference_colors = {
     "Grey": np.array([128, 128, 128]),
     "Blue": np.array([0, 0, 255]),

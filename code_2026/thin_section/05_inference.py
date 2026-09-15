@@ -29,6 +29,14 @@ output_figure = output_dir / "inference_results.png"
 # =========================================================
 # Reference label colors (same mapping used in 02/03)
 # =========================================================
+# Mineral identity behind each label color (ore microscopy):
+#   Grey   = Background
+#   Blue   = Pyrite
+#   Green  = Sphalerite
+#   Yellow = Galena
+# Not present in the current labeled images (img_0037 / img_0145):
+#   Red    = Chalcopyrite
+#   Pink   = Gold
 reference_colors = {
     "Grey": np.array([128, 128, 128]),
     "Blue": np.array([0, 0, 255]),
@@ -152,6 +160,56 @@ print("====================================\n")
 print(cm_df)
 
 # =========================================================
+# Per-class TP / FN / FP / TN (one-vs-rest)
+# =========================================================
+num_classes = len(class_names)
+total_pixels = cm.sum()
+
+tp_per_class = np.zeros(num_classes, dtype=np.int64)
+fn_per_class = np.zeros(num_classes, dtype=np.int64)
+fp_per_class = np.zeros(num_classes, dtype=np.int64)
+tn_per_class = np.zeros(num_classes, dtype=np.int64)
+iou_per_class = np.zeros(num_classes)
+
+for class_id in range(num_classes):
+    true_positive = cm[class_id, class_id]
+    false_positive = cm[:, class_id].sum() - true_positive
+    false_negative = cm[class_id, :].sum() - true_positive
+    true_negative = total_pixels - true_positive - false_positive - false_negative
+
+    tp_per_class[class_id] = true_positive
+    fn_per_class[class_id] = false_negative
+    fp_per_class[class_id] = false_positive
+    tn_per_class[class_id] = true_negative
+
+    denominator = true_positive + false_positive + false_negative
+    iou_per_class[class_id] = true_positive / denominator if denominator > 0 else np.nan
+
+miou = np.nanmean(iou_per_class)
+
+stats_df = pd.DataFrame(
+    {
+        "TP": tp_per_class,
+        "FN": fn_per_class,
+        "FP": fp_per_class,
+        "TN": tn_per_class,
+    },
+    index=class_names,
+)
+
+print("\n====================================")
+print("Per-Class TP / FN / FP / TN")
+print("====================================\n")
+print(stats_df.to_string())
+
+print("\n====================================")
+print("Mean IoU (mIoU)")
+print("====================================\n")
+for class_id, name in enumerate(class_names):
+    print(f"{name:8s} IoU : {iou_per_class[class_id]:.4f}")
+print(f"\nmIoU : {miou:.4f}")
+
+# =========================================================
 # Build RGB visualizations from class-id maps
 # =========================================================
 def id_map_to_rgb(id_map):
@@ -186,7 +244,7 @@ axes[1].set_title("True Label")
 axes[1].axis("off")
 
 axes[2].imshow(pred_rgb)
-axes[2].set_title(f"XGBoost Prediction\n(Accuracy: {accuracy:.4f})")
+axes[2].set_title(f"XGBoost Prediction\n(Accuracy: {accuracy:.4f}, mIoU: {miou:.4f})")
 axes[2].axis("off")
 
 axes[3].imshow(diff_mask, cmap="Reds")

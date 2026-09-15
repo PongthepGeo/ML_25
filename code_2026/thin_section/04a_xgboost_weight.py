@@ -9,9 +9,28 @@ from xgboost import XGBClassifier
 
 # =========================================================
 # Paths
+#
+# Train / validation data : img_0037, extracted to CSV by
+#                           03_image2csv.py (default args).
+# Test data                : img_0145, a different image,
+#                           held out entirely. Extracted the
+#                           same way, via:
+#                             python 03_image2csv.py \
+#                               --image data/img_0145.png \
+#                               --label data/label_0145.png \
+#                               --output-csv 03_image2csv/03_image2csv_test.csv
+#
+# This is the same pipeline as 04_xgboost.py, with one change:
+# training uses per-sample class weights (inverse frequency),
+# to see whether that suppresses false positives on the
+# majority class (Grey) and recovers recall on the rare
+# classes (Green/Yellow) that 04_xgboost.py misses on img_0145.
+# Saved to its own model file so the unweighted baseline in
+# 04_xgboost_model.json is not overwritten.
 # =========================================================
 csv_path = Path("03_image2csv/03_image2csv.csv")
-model_path = Path("04_xgboost_model.json")
+test_csv_path = Path("03_image2csv/03_image2csv_test.csv")
+model_path = Path("04a_xgboost_weight_model.json")
 print("\n====================================")
 
 # =========================================================
@@ -66,21 +85,20 @@ for class_id, class_name in enumerate(label_encoder.classes_):
     print(f"{class_name:8s} -> {class_id}")
 
 # =========================================================
-# Train / test split
+# Train / validation split
 #
-# 80% training
-# 20% testing
+# img_0037 supplies ALL training + validation data here.
+# eval_set below monitors train vs. validation loss during
+# boosting -- both still come from img_0037.
 # =========================================================
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42, stratify=y)
-print("\n====================================")
-print("Train / Test Split")
-print("====================================")
-print(f"Training samples : {len(X_train):,}")
-print(f"Testing samples  : {len(X_test):,}")
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.20, random_state=42, stratify=y)
 
-# =========================================================
-# Check class distribution after split
-# =========================================================
+print("\n====================================")
+print("Train / Validation Split (img_0037)")
+print("====================================")
+print(f"Training samples   : {len(X_train):,}")
+print(f"Validation samples : {len(X_val):,}")
+
 print("\nTraining class counts:")
 
 train_unique, train_counts = np.unique(y_train, return_counts=True)
@@ -88,6 +106,59 @@ train_unique, train_counts = np.unique(y_train, return_counts=True)
 for class_id, count in zip(train_unique, train_counts):
     class_name = label_encoder.inverse_transform([class_id])[0]
     print(f"{class_name:8s}: " f"{count:,}")
+
+print("\nValidation class counts:")
+val_unique, val_counts = np.unique(y_val, return_counts=True)
+
+for class_id, count in zip(val_unique, val_counts):
+    class_name = label_encoder.inverse_transform([class_id])[0]
+    print(f"{class_name:8s}: " f"{count:,}")
+
+# =========================================================
+# Class weights (inverse frequency, from TRAINING split only)
+#
+# weight[c] = n_train_samples / (n_classes * n_train_samples_in_c)
+# -- the same "balanced" scheme as sklearn's
+#    class_weight="balanced". A rare class (e.g. Yellow at
+#    ~0.1% of pixels) gets a weight far above 1; the majority
+#    class (Grey) gets a weight below 1. Every training pixel
+#    is weighted by its class's weight, so mistakes on rare
+#    classes cost the loss much more than before.
+# =========================================================
+num_classes = len(label_encoder.classes_)
+class_sample_counts = np.bincount(y_train, minlength=num_classes)
+class_weights = len(y_train) / (num_classes * class_sample_counts)
+
+print("\n====================================")
+print("Class Weights (inverse frequency)")
+print("====================================")
+for class_id, class_name in enumerate(label_encoder.classes_):
+    print(f"{class_name:8s}: " f"{class_weights[class_id]:.4f}")
+
+sample_weight_train = class_weights[y_train]
+sample_weight_val = class_weights[y_val]
+
+# =========================================================
+# Test set -- a DIFFERENT image (img_0145), held out entirely.
+#
+# This is never touched during training or validation above.
+# Evaluating on a separate image (rather than a random split
+# of img_0037's own pixels) is what actually measures
+# generalization to new data. Extracted the same way as the
+# training data, via 03_image2csv.py (see Paths above).
+# =========================================================
+print("\n====================================")
+print("Load test dataset (img_0145)")
+print("====================================")
+
+df_test = pd.read_csv(test_csv_path)
+print(f"CSV file: {test_csv_path}")
+print(f"Dataset rows: {len(df_test):,}")
+
+X_test = df_test[feature_columns].values
+y_test = label_encoder.transform(df_test["Class"].values)
+
+print(f"\nTesting samples : {len(X_test):,}")
 
 print("\nTesting class counts:")
 test_unique, test_counts = np.unique(y_test, return_counts=True)
@@ -116,13 +187,20 @@ print(f"CPU threads: {model.n_jobs}")
 # Train
 # =========================================================
 print("\n====================================")
-print("Training XGBoost")
+print("Training XGBoost (class-weighted)")
 print("====================================")
 print("\nTraining progress will be printed " "every 10 boosting rounds.")
+print("\nMonitoring train vs. validation loss (test set stays held out).")
 print("\nStart training...\n")
 
 start_time = time.time()
-model.fit(X_train, y_train, eval_set=[(X_train, y_train), (X_test, y_test)],verbose=10)
+model.fit(
+    X_train, y_train,
+    sample_weight=sample_weight_train,
+    eval_set=[(X_train, y_train), (X_val, y_val)],
+    sample_weight_eval_set=[sample_weight_train, sample_weight_val],
+    verbose=10,
+)
 
 elapsed_time = (time.time() - start_time)
 
@@ -136,11 +214,11 @@ print(f"Training time : " f"{elapsed_time:.2f} seconds")
 # =========================================================
 results = model.evals_result()
 train_loss = results["validation_0"]["mlogloss"]
-test_loss = results["validation_1"]["mlogloss"]
+val_loss = results["validation_1"]["mlogloss"]
 print("\nFinal training loss:")
 print(f"{train_loss[-1]:.6f}")
-print("\nFinal testing loss:")
-print(f"{test_loss[-1]:.6f}")
+print("\nFinal validation loss:")
+print(f"{val_loss[-1]:.6f}")
 
 # =========================================================
 # Prediction
@@ -188,6 +266,55 @@ cm_df = pd.DataFrame(cm, index=[f"True_{name}" for name in label_encoder.classes
 
 print("\nConfusion Matrix with class names:\n")
 print(cm_df)
+
+# =========================================================
+# Per-class TP / FN / FP / TN (one-vs-rest) and mIoU
+# =========================================================
+total_pixels = cm.sum()
+
+tp_per_class = np.zeros(num_classes, dtype=np.int64)
+fn_per_class = np.zeros(num_classes, dtype=np.int64)
+fp_per_class = np.zeros(num_classes, dtype=np.int64)
+tn_per_class = np.zeros(num_classes, dtype=np.int64)
+iou_per_class = np.zeros(num_classes)
+
+for class_id in range(num_classes):
+    true_positive = cm[class_id, class_id]
+    false_positive = cm[:, class_id].sum() - true_positive
+    false_negative = cm[class_id, :].sum() - true_positive
+    true_negative = total_pixels - true_positive - false_positive - false_negative
+
+    tp_per_class[class_id] = true_positive
+    fn_per_class[class_id] = false_negative
+    fp_per_class[class_id] = false_positive
+    tn_per_class[class_id] = true_negative
+
+    denominator = true_positive + false_positive + false_negative
+    iou_per_class[class_id] = true_positive / denominator if denominator > 0 else np.nan
+
+miou = np.nanmean(iou_per_class)
+
+stats_df = pd.DataFrame(
+    {
+        "TP": tp_per_class,
+        "FN": fn_per_class,
+        "FP": fp_per_class,
+        "TN": tn_per_class,
+    },
+    index=label_encoder.classes_,
+)
+
+print("\n====================================")
+print("Per-Class TP / FN / FP / TN")
+print("====================================\n")
+print(stats_df.to_string())
+
+print("\n====================================")
+print("Mean IoU (mIoU)")
+print("====================================\n")
+for class_id, class_name in enumerate(label_encoder.classes_):
+    print(f"{class_name:8s} IoU : {iou_per_class[class_id]:.4f}")
+print(f"\nmIoU : {miou:.4f}")
 
 # =========================================================
 # Feature importance
