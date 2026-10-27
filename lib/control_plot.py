@@ -26,6 +26,15 @@ Usage:
     from control_plot import PLOT_PARAMS
 
     plt.rcParams.update(PLOT_PARAMS)
+
+Segmentation colors (class-specific, not part of the paper file) are defined
+at the bottom of this file and shared by the soil scripts
+(code_2026/02_mlp_soil.py and 03_deploy_soil.py):
+
+    from control_plot import (
+        PLOT_PARAMS, BACKGROUND_VALUE, SOIL_VALUE,
+        COLOR_BACKGROUND, COLOR_SOIL, COLOR_FALSE_POSITIVE, COLOR_FALSE_NEGATIVE,
+    )
 """
 
 # PLOT_PARAMS = {
@@ -70,3 +79,15 @@ PLOT_PARAMS = {
 
     "mathtext.fontset": "stix",
 }
+
+# ---------------------------------------------------------------------------
+# Segmentation colors and mask values: grey = background, white = soil (no black).
+# Red / blue mark classification errors in the error panels.
+# ---------------------------------------------------------------------------
+BACKGROUND_VALUE = 127                 # predicted_mask.png: background (and pixels not predicted)
+SOIL_VALUE = 255                       # predicted_mask.png: soil
+
+COLOR_BACKGROUND = (127, 127, 127)     # grey  = background (and pixels not used)
+COLOR_SOIL = (255, 255, 255)           # white = soil
+COLOR_FALSE_POSITIVE = (255, 0, 0)     # red   = predicted soil, but it is background
+COLOR_FALSE_NEGATIVE = (0, 90, 255)    # blue  = predicted background, but it is soil

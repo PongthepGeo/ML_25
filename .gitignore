@@ -4,6 +4,10 @@ __pycache__/
 # === Large data ===
 dataset/
 
+# === Generated tables and figures (keep the repo small) ===
+*.csv
+*.png
+
 # === Script outputs (one folder per script, named after the script) ===
 01_linear_regression/
 02_classification/

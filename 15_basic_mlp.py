@@ -65,5 +65,3 @@ if __name__ == "__main__":
     loss = nn.CrossEntropyLoss()(logits, y)
     loss.backward()                # grads flow; ready for an optimizer
     print("logits:", logits.shape, "| loss:", float(loss))
-
-
