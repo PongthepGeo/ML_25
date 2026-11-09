@@ -3,15 +3,14 @@ import sys
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
 import matplotlib.pyplot as plt
 from PIL import Image
 from pathlib import Path
 from matplotlib.patches import Patch
-from typing import Iterable, Callable
 
 # ============================================================================
-# Shared global plot style (main_code/lib/control_plot.py)
+# Shared code in main_code/lib: plot style and segmentation colors
+# (control_plot.py), model loading + metrics (mlp_util.py, also used by 03_mlp.py)
 # ============================================================================
 sys.path.append(str(Path(__file__).resolve().parents[1] / "lib"))
 
@@ -19,6 +18,7 @@ from control_plot import (
     PLOT_PARAMS, BACKGROUND_VALUE, SOIL_VALUE, COLOR_BACKGROUND, COLOR_SOIL,
     COLOR_FALSE_POSITIVE, COLOR_FALSE_NEGATIVE,
 )
+from mlp_util import load_model, summarize
 
 plt.rcParams.update(PLOT_PARAMS)
 
@@ -39,65 +39,8 @@ RESULT_FIG_FILE = 'result.png'
 BATCH_SIZE = 262144
 
 # ============================================================================
-# 1. MLP ARCHITECTURE (same as 03_mlp.py, needed to rebuild the model)
-# ============================================================================
-class MLP(nn.Module):
-    def __init__(
-        self,
-        in_dim: int,
-        hidden: Iterable[int],
-        out_dim: int,
-        activation: Callable[[], nn.Module] = nn.ReLU,
-        batchnorm: bool = True,
-        dropout: float = 0.0,
-    ):
-        super().__init__()
-        layers = []
-        prev = in_dim
-        for h in hidden:
-            layers.append(nn.Linear(prev, h))
-            if batchnorm:
-                layers.append(nn.BatchNorm1d(h))
-            layers.append(activation())
-            if dropout > 0:
-                layers.append(nn.Dropout(dropout))
-            prev = h
-
-        # Final output layer
-        layers.append(nn.Linear(prev, out_dim))
-        self.net = nn.Sequential(*layers)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.net(x)
-
-# ============================================================================
-# 2. LOAD THE TRAINED MODEL
-# ============================================================================
-def load_model(model_path: Path, device: str):
-    if not model_path.exists():
-        raise FileNotFoundError(
-            f"Model not found: {model_path}\n"
-            "Run 03_mlp.py first."
-        )
-    checkpoint = torch.load(model_path, map_location=device)
-
-    model = MLP(
-        in_dim=checkpoint['input_dim'],
-        hidden=checkpoint['hidden'],
-        out_dim=checkpoint['num_classes'],
-        batchnorm=checkpoint['use_batchnorm'],
-        dropout=checkpoint['dropout']
-    ).to(device)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.eval()                   # inference mode: BatchNorm uses saved statistics, Dropout is off
-
-    print(f"[Model] Loaded: {model_path}")
-    print(f"[Model] Features: {checkpoint['feature_cols']} | Hidden: {checkpoint['hidden']} | "
-          f"Classes: {checkpoint['class_names']}")
-    return model, checkpoint
-
-# ============================================================================
-# 3. LOAD THE WHOLE-IMAGE TABLE
+# 1. LOAD THE WHOLE-IMAGE TABLE
+# (the trained model is rebuilt by load_model in lib/mlp_util.py)
 # ============================================================================
 def load_table(table_path: Path, checkpoint: dict):
     """
@@ -135,7 +78,7 @@ def load_table(table_path: Path, checkpoint: dict):
     return X_numpy, y_numpy, df, (H, W)
 
 # ============================================================================
-# 4. PREDICT
+# 2. PREDICT
 # ============================================================================
 def predict(model, X_numpy: np.ndarray, device: str):
     """Returns the predicted class for every row."""
@@ -147,7 +90,7 @@ def predict(model, X_numpy: np.ndarray, device: str):
     return torch.cat(classes).numpy()
 
 # ============================================================================
-# 5. METRICS
+# 3. METRICS (summarize is in lib/mlp_util.py)
 # ============================================================================
 def confusion(preds: np.ndarray, targets: np.ndarray):
     """Confusion counts for the soil class (1)."""
@@ -157,17 +100,8 @@ def confusion(preds: np.ndarray, targets: np.ndarray):
     tn = int(((preds == 0) & (targets == 0)).sum())
     return tp, fp, fn, tn
 
-def summarize(tp, fp, fn, tn):
-    total = tp + fp + fn + tn
-    acc = 100.0 * (tp + tn) / max(1, total)
-    precision = tp / max(1, tp + fp)
-    recall = tp / max(1, tp + fn)
-    f1 = 2 * precision * recall / max(1e-12, precision + recall)
-    iou = tp / max(1, tp + fp + fn)
-    return acc, precision, recall, f1, iou
-
 # ============================================================================
-# 6. MAIN
+# 4. MAIN
 # ============================================================================
 def parse_args():
     parser = argparse.ArgumentParser(

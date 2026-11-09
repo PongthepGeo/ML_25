@@ -7,14 +7,15 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from pathlib import Path
 from torch.utils.data import TensorDataset, DataLoader
-from typing import Iterable, Callable
 
 # ============================================================================
-# Shared global plot style (main_code/lib/control_plot.py)
+# Shared code in main_code/lib: plot style (control_plot.py), model + metrics +
+# checkpoint format (mlp_util.py, also used by 04_deploy.py)
 # ============================================================================
 sys.path.append(str(Path(__file__).resolve().parents[1] / "lib"))
 
 from control_plot import PLOT_PARAMS
+from mlp_util import MLP, summarize, save_checkpoint
 
 plt.rcParams.update(PLOT_PARAMS)
 
@@ -52,44 +53,8 @@ DROPOUT = 0.1
 USE_BATCHNORM = True
 
 # ============================================================================
-# 1. MLP ARCHITECTURE
+# 1. MLP ARCHITECTURE: class MLP in lib/mlp_util.py (shared with 04_deploy.py)
 # ============================================================================
-class MLP(nn.Module):
-    def __init__(
-        self,
-        in_dim: int,
-        hidden: Iterable[int],
-        out_dim: int,
-        activation: Callable[[], nn.Module] = nn.ReLU,
-        batchnorm: bool = True,
-        dropout: float = 0.0,
-    ):
-        super().__init__()
-        layers = []
-        prev = in_dim
-        for h in hidden:
-            layers.append(nn.Linear(prev, h))
-            if batchnorm:
-                layers.append(nn.BatchNorm1d(h))
-            layers.append(activation())
-            if dropout > 0:
-                layers.append(nn.Dropout(dropout))
-            prev = h
-
-        # Final output layer
-        layers.append(nn.Linear(prev, out_dim))
-        self.net = nn.Sequential(*layers)
-        self._init_weights()
-
-    def _init_weights(self):
-        # Kaiming initialization for ReLU-based MLP
-        for m in self.modules():
-            if isinstance(m, nn.Linear):
-                nn.init.kaiming_uniform_(m.weight, nonlinearity='relu')
-                nn.init.zeros_(m.bias)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.net(x)
 
 # ============================================================================
 # 2. LOAD A TABLE (train / val / test)
@@ -143,14 +108,7 @@ def evaluate(model, loader, criterion, device):
             tn += ((preds == 0) & (y_b == 0)).sum().item()
     return loss_sum / max(1, n_samples), (tp, fp, fn, tn)
 
-def summarize(tp, fp, fn, tn):
-    total = tp + fp + fn + tn
-    acc = 100.0 * (tp + tn) / max(1, total)
-    precision = tp / max(1, tp + fp)
-    recall = tp / max(1, tp + fn)
-    f1 = 2 * precision * recall / max(1e-12, precision + recall)
-    iou = tp / max(1, tp + fp + fn)
-    return acc, precision, recall, f1, iou
+# summarize(tp, fp, fn, tn) -> accuracy, precision, recall, F1, IoU: see lib/mlp_util.py
 
 def print_report(title, counts, soil_name):
     tp, fp, fn, tn = counts
@@ -297,18 +255,17 @@ def main():
 
     # 7) Save model weights (+ loss history)
     model_path = OUTDIR / MODEL_WEIGHT_FILE
-    torch.save({
-        'model_state_dict': model.state_dict(),
-        'input_dim': len(FEATURE_COLS),
-        'feature_cols': FEATURE_COLS,
-        'feature_scale': FEATURE_SCALE,
-        'class_names': [BACKGROUND_NAME, soil_name],
-        'hidden': HIDDEN,
-        'num_classes': NUM_CLASSES,
-        'use_batchnorm': USE_BATCHNORM,
-        'dropout': DROPOUT,
-        'history': history
-    }, model_path)
+    save_checkpoint(
+        model_path, model,
+        feature_cols=FEATURE_COLS,
+        feature_scale=FEATURE_SCALE,
+        class_names=[BACKGROUND_NAME, soil_name],
+        hidden=HIDDEN,
+        num_classes=NUM_CLASSES,
+        use_batchnorm=USE_BATCHNORM,
+        dropout=DROPOUT,
+        history=history,
+    )
     print(f"[ok] Model weights saved to {model_path}")
 
     # 8) Show the loss history and the confusion matrices last (closing the windows ends the script)
