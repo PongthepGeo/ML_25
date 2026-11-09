@@ -12,7 +12,7 @@ from typing import Iterable, Callable
 # ============================================================================
 # Shared global plot style (main_code/lib/control_plot.py)
 # ============================================================================
-sys.path.append(str(Path(__file__).resolve().parents[2] / "lib"))
+sys.path.append(str(Path(__file__).resolve().parents[1] / "lib"))
 
 from control_plot import PLOT_PARAMS
 

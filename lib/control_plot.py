@@ -28,8 +28,8 @@ Usage:
     plt.rcParams.update(PLOT_PARAMS)
 
 Segmentation colors (class-specific, not part of the paper file) are defined
-at the bottom of this file and shared by the soil scripts
-(code_2026/02_mlp_soil.py and 03_deploy_soil.py):
+at the bottom of this file and used by the soil deploy script
+(code_2026/04_deploy.py):
 
     from control_plot import (
         PLOT_PARAMS, BACKGROUND_VALUE, SOIL_VALUE,
