@@ -23,10 +23,11 @@ plt.rcParams.update(PLOT_PARAMS)
 # ============================================================================
 # Paths are relative to this script, so it runs from any folder.
 SCRIPT_DIR = Path(__file__).resolve().parent
-SPLIT_DIR = SCRIPT_DIR / '02_split'                    # made by 02_split.py
+SPLIT_DIR = SCRIPT_DIR / '02_split'                    # made by 02_split.py (split of image 1)
 TRAIN_TABLE = SPLIT_DIR / 'train.csv'
 VAL_TABLE = SPLIT_DIR / 'val.csv'
-TEST_TABLE = SPLIT_DIR / 'test.csv'
+# Test = a different photo (image 2), made by 01_image_to_table.py; never seen in training
+TEST_TABLE = SCRIPT_DIR / '01_image_to_table' / 'test.csv'
 
 # Output folder (one folder per script, named after the script)
 OUTDIR = SCRIPT_DIR / '03_mlp'
@@ -95,7 +96,7 @@ class MLP(nn.Module):
 # ============================================================================
 def load_table(table_path: Path):
     """
-    1) Reads one table made by 02_split.py
+    1) Reads one table (train.csv / val.csv from 02_split.py, test.csv from 01_image_to_table.py)
     2) Returns X (R, G, B scaled to 0..1), y (0 = background, 1 = soil),
        and the soil class name
     """
@@ -222,7 +223,7 @@ def main():
     torch.manual_seed(SEED)
     np.random.seed(SEED)
 
-    # 1) Load the three tables made by 02_split.py
+    # 1) Load the three tables: train + val (image 1, 02_split.py) and test (image 2, 01_image_to_table.py)
     X_train, y_train, soil_name = load_table(TRAIN_TABLE)
     X_val, y_val, _ = load_table(VAL_TABLE)
     X_test, y_test, _ = load_table(TEST_TABLE)
@@ -288,7 +289,7 @@ def main():
     _, val_counts = evaluate(model, val_loader, criterion, device)
     test_loss, test_counts = evaluate(model, test_loader, criterion, device)
     print_report("Validation Report", val_counts, soil_name)
-    print_report("Test Report", test_counts, soil_name)
+    print_report("Test Report (unseen image)", test_counts, soil_name)
     print(f"Test loss: {test_loss:.4f}")
 
     # 6) Confusion matrices (validation and test)
