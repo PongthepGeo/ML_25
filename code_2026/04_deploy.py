@@ -9,10 +9,11 @@ from pathlib import Path
 from matplotlib.patches import Patch
 
 # ============================================================================
-# Shared code in main_code/lib: plot style and segmentation colors
-# (control_plot.py), model loading + metrics (mlp_util.py, also used by 03_mlp.py)
+# Plot style and segmentation colors: control_plot.py in THIS folder (code_2026/control_plot.py).
+# Model loading and metrics: main_code/lib/mlp_util.py (shared with 03_mlp.py).
 # ============================================================================
-sys.path.append(str(Path(__file__).resolve().parents[1] / "lib"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))                  # local control_plot.py always wins
+sys.path.append(str(Path(__file__).resolve().parents[1] / "lib"))         # mlp_util.py
 
 from control_plot import (
     PLOT_PARAMS, BACKGROUND_VALUE, SOIL_VALUE, COLOR_BACKGROUND, COLOR_SOIL,

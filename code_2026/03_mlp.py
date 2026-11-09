@@ -9,10 +9,11 @@ from pathlib import Path
 from torch.utils.data import TensorDataset, DataLoader
 
 # ============================================================================
-# Shared code in main_code/lib: plot style (control_plot.py), model + metrics +
-# checkpoint format (mlp_util.py, also used by 04_deploy.py)
+# Plot style: control_plot.py in THIS folder (code_2026/control_plot.py).
+# Model, metrics and checkpoint format: main_code/lib/mlp_util.py (shared with 04_deploy.py).
 # ============================================================================
-sys.path.append(str(Path(__file__).resolve().parents[1] / "lib"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))                  # local control_plot.py always wins
+sys.path.append(str(Path(__file__).resolve().parents[1] / "lib"))         # mlp_util.py
 
 from control_plot import PLOT_PARAMS
 from mlp_util import MLP, summarize, save_checkpoint

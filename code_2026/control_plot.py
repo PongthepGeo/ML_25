@@ -1,0 +1,98 @@
+"""Global matplotlib style shared by every figure script in main_code.
+
+The dpi/font-family core is mirrored from the manuscript figure code at
+/home/laptop_pt/Desktop/work/paper/03_thin_section/manuscript/figure_code/control_plot.py
+so class slides and paper figures share the same look. Two class-specific
+additions sit on top of that shared core (not present in the paper file):
+
+  - "figure.figsize": a 16:9 default (matches the beamer aspectratio=169
+    slides) sized to 1152x648 px at 96 dpi -- big enough to read comfortably
+    on a laptop/monitor, small enough to still fit alongside other windows.
+    This is the answer to "can we globally define figsize instead of typing
+    figsize=(10, 5) everywhere": any plt.figure()/plt.subplots() call made
+    *without* an explicit figsize= picks this up automatically. Calls that
+    still pass figsize= (multi-panel subplots, square image grids, wide
+    image overlays, etc.) are intentionally keeping their own aspect ratio
+    and should stay that way -- one global size can't fit every layout.
+  - Larger label/tick/legend/title sizes than the paper file, since text
+    at the paper's sizes reads too small once shrunk into a beamer slide.
+
+THIS IS THE code_2026 COPY of main_code/lib/control_plot.py. The code is
+identical; only this docstring differs. The scripts in code_2026/ import this
+local copy, so when you change the style here, make the same change in
+main_code/lib/control_plot.py (used by the other folders) and vice versa.
+
+Usage (a script in code_2026/):
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent))   # this folder first
+
+    import matplotlib.pyplot as plt
+    from control_plot import PLOT_PARAMS
+
+    plt.rcParams.update(PLOT_PARAMS)
+
+Segmentation colors (class-specific, not part of the paper file) are defined
+at the bottom of this file and used by the soil deploy script
+(code_2026/04_deploy.py):
+
+    from control_plot import (
+        PLOT_PARAMS, BACKGROUND_VALUE, SOIL_VALUE,
+        COLOR_BACKGROUND, COLOR_SOIL, COLOR_FALSE_POSITIVE, COLOR_FALSE_NEGATIVE,
+    )
+"""
+
+# PLOT_PARAMS = {
+#     "savefig.dpi": 96,
+#     "figure.dpi": 96,
+#     "figure.figsize": (12, 6.75),
+#     "axes.labelsize": 20,
+#     "axes.labelweight": "bold",
+#     "axes.titlesize": 20,
+#     "axes.titleweight": "bold",
+#     "legend.fontsize": 18,
+#     "xtick.labelsize": 18,
+#     "ytick.labelsize": 18,
+#     "font.family": "serif",
+#     "font.serif": ["Times New Roman", "Times"],
+#     "mathtext.fontset": "stix",
+# }
+
+PLOT_PARAMS = {
+    "savefig.dpi": 96,
+    "figure.dpi": 96,
+    "figure.figsize": (12, 6.75),
+
+    "axes.labelsize": 20,
+    "axes.labelweight": "bold",
+
+    "axes.titlesize": 20,
+    "axes.titleweight": "bold",
+
+    "legend.fontsize": 18,
+    "xtick.labelsize": 18,
+    "ytick.labelsize": 18,
+
+    "font.family": "serif",
+
+    "font.serif": [
+        "Times New Roman",
+        "Times",
+        "STIX Two Text",
+        "DejaVu Serif",
+    ],
+
+    "mathtext.fontset": "stix",
+}
+
+# ---------------------------------------------------------------------------
+# Segmentation colors and mask values: grey = background, white = soil (no black).
+# Red / blue mark classification errors in the error panels.
+# ---------------------------------------------------------------------------
+BACKGROUND_VALUE = 127                 # predicted_mask.png: background (and pixels not predicted)
+SOIL_VALUE = 255                       # predicted_mask.png: soil
+
+COLOR_BACKGROUND = (127, 127, 127)     # grey  = background (and pixels not used)
+COLOR_SOIL = (255, 255, 255)           # white = soil
+COLOR_FALSE_POSITIVE = (255, 0, 0)     # red   = predicted soil, but it is background
+COLOR_FALSE_NEGATIVE = (0, 90, 255)    # blue  = predicted background, but it is soil
